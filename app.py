@@ -97,12 +97,6 @@ function clearForm() {
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    cleaned_html = None
-    html_input = None
-    pattern = None
-    removed_links = []
-    action = "unwrap"
-
     if request.method == "POST":
         html_input = request.form.get("html_input")
         pattern = request.form.get("pattern")
@@ -111,9 +105,8 @@ def index():
         patterns = [p.strip() for p in pattern.split(",")]
 
         soup = BeautifulSoup(html_input, "html.parser")
-
-        # For storing original <a> tag strings to preserve formatting
         replacements = []
+        removed_links = []
 
         for a_tag in soup.find_all("a", href=True):
             href = a_tag.get("href", "")
@@ -135,6 +128,12 @@ def index():
         cleaned_html = html_input
         for original, replacement in replacements:
             cleaned_html = cleaned_html.replace(original, replacement)
+    else:
+        html_input = ""
+        cleaned_html = ""
+        pattern = ""
+        removed_links = []
+        action = "unwrap"
 
     return render_template_string(
         HTML_TEMPLATE,
