@@ -48,7 +48,7 @@ HTML_TEMPLATE = """
     <div class="preview-container">
         <div class="preview-box">
             <h5>Original HTML</h5>
-            <textarea class="form-control" rows="10" readonly>{{ html_input }}</textarea>
+            <textarea id="originalHtml" class="form-control" rows="10" readonly>{{ html_input }}</textarea>
         </div>
         <div class="preview-box">
             <h5>Cleaned HTML</h5>
@@ -61,7 +61,7 @@ HTML_TEMPLATE = """
     {% if removed_links %}
     <hr>
     <h3>Matched Links</h3>
-    <ol>
+    <ol id="matchedLinks">
         {% for link in removed_links %}
             <li>{{ link }}</li>
         {% endfor %}
@@ -85,6 +85,10 @@ function clearForm() {
     document.getElementById("htmlInput").value = "";
     var cleaned = document.getElementById("cleanedHtml");
     if (cleaned) cleaned.value = "";
+    var original = document.getElementById("originalHtml");
+    if (original) original.value = "";
+    var matched = document.getElementById("matchedLinks");
+    if (matched) matched.innerHTML = "";
 }
 </script>
 </body>
