@@ -1,5 +1,4 @@
 from flask import Flask, render_template_string, request
-from bs4 import BeautifulSoup
 import re
 
 app = Flask(__name__)
@@ -95,6 +94,34 @@ function clearForm() {
 </html>
 """
 
+def clean_links_regex(html, patterns, action):
+    removed_links = []
+    # Build a regex pattern for all provided patterns
+    for p in patterns:
+        # Match <a ... href="...pattern..." ...>...</a>
+        regex = re.compile(
+            r'<a([^>]*href="[^"]*' + re.escape(p) + r'[^"]*"[^>]*)>(.*?)</a>',
+            re.DOTALL | re.IGNORECASE
+        )
+        def replacer(match):
+            # Extract href for reporting
+            href_match = re.search(r'href="([^"]+)"', match.group(1))
+            if href_match:
+                removed_links.append(href_match.group(1))
+            if action == "remove":
+                return ""
+            elif action == "strip":
+                # Remove href and title attributes only
+                tag = match.group(1)
+                tag = re.sub(r'\s*href="[^"]*"', '', tag)
+                tag = re.sub(r'\s*title="[^"]*"', '', tag)
+                return f"<a{tag}>{match.group(2)}</a>"
+            elif action == "unwrap":
+                return match.group(2)
+            return match.group(0)
+        html = regex.sub(replacer, html)
+    return html, removed_links
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -102,23 +129,9 @@ def index():
         pattern = request.form.get("pattern")
         action = request.form.get("action")
 
-        patterns = [p.strip() for p in pattern.split(",")]
+        patterns = [p.strip() for p in pattern.split(",") if p.strip()]
 
-        soup = BeautifulSoup(html_input, "html.parser")
-        removed_links = []
-
-        for a_tag in soup.find_all("a", href=True):
-            href = a_tag.get("href", "")
-            if any(p in href for p in patterns):
-                removed_links.append(href)
-                if action == "remove":
-                    a_tag.decompose()
-                elif action == "strip":
-                    a_tag.attrs.pop("href", None)
-                    a_tag.attrs.pop("title", None)
-                elif action == "unwrap":
-                    a_tag.unwrap()
-        cleaned_html = str(soup)
+        cleaned_html, removed_links = clean_links_regex(html_input, patterns, action)
     else:
         html_input = ""
         cleaned_html = ""
