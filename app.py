@@ -105,29 +105,20 @@ def index():
         patterns = [p.strip() for p in pattern.split(",")]
 
         soup = BeautifulSoup(html_input, "html.parser")
-        replacements = []
         removed_links = []
 
         for a_tag in soup.find_all("a", href=True):
             href = a_tag.get("href", "")
             if any(p in href for p in patterns):
                 removed_links.append(href)
-                original = str(a_tag)
-
                 if action == "remove":
-                    replacement = ""
+                    a_tag.decompose()
                 elif action == "strip":
                     a_tag.attrs.pop("href", None)
                     a_tag.attrs.pop("title", None)
-                    replacement = str(a_tag)
                 elif action == "unwrap":
-                    replacement = a_tag.get_text()
-
-                replacements.append((original, replacement))
-
-        cleaned_html = html_input
-        for original, replacement in replacements:
-            cleaned_html = cleaned_html.replace(original, replacement)
+                    a_tag.unwrap()
+        cleaned_html = str(soup)
     else:
         html_input = ""
         cleaned_html = ""
