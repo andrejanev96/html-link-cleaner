@@ -135,8 +135,5 @@ def index():
         action=action
     )
 
-import webbrowser
-import threading
-
 if __name__ == "__main__":
     app.run(debug=True)
