@@ -19,7 +19,10 @@ HTML_TEMPLATE = """
 </head>
 <body class="bg-light p-4">
 <div class="container">
-    <h1 class="mb-4">HTML Link Cleaner</h1>
+    <h2 class="mb-4">HTML Link Cleaner</h2>
+    {% if article_title %}
+    <h2 class="mb-3">{{ article_title }}</h2>
+    {% endif %}
     <form method="post" id="htmlCleanerForm">
         <div class="mb-3">
             <label class="form-label">HTML Input</label>
@@ -65,6 +68,7 @@ HTML_TEMPLATE = """
             <li>{{ link }}</li>
         {% endfor %}
     </ol>
+    <div class="mt-2"><strong>Total links matched: {{ removed_links|length }}</strong></div>
     {% endif %}
     {% endif %}
 </div>
@@ -122,6 +126,16 @@ def clean_links_regex(html, patterns, action):
         html = regex.sub(replacer, html)
     return html, removed_links
 
+def extract_article_title(html):
+    # Extract only the string from the first <h2> tag, strip all inner HTML tags
+    h2_match = re.search(r'<h2[^>]*>(.*?)</h2>', html, re.IGNORECASE | re.DOTALL)
+    if h2_match:
+        h2_content = h2_match.group(1).strip()
+        # Remove all HTML tags from the content
+        h2_text = re.sub(r'<[^>]+>', '', h2_content)
+        return h2_text.strip()
+    return ""
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -132,12 +146,14 @@ def index():
         patterns = [p.strip() for p in pattern.split(",") if p.strip()]
 
         cleaned_html, removed_links = clean_links_regex(html_input, patterns, action)
+        article_title = extract_article_title(html_input)
     else:
         html_input = ""
         cleaned_html = ""
         pattern = ""
         removed_links = []
         action = "unwrap"
+        article_title = ""
 
     return render_template_string(
         HTML_TEMPLATE,
@@ -145,7 +161,8 @@ def index():
         html_input=html_input,
         pattern=pattern,
         removed_links=removed_links,
-        action=action
+        action=action,
+        article_title=article_title
     )
 
 if __name__ == "__main__":
